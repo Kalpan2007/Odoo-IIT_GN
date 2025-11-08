@@ -52,8 +52,8 @@ export const LoginPage: React.FC = () => {
     try {
       await login(formData.email, formData.password);
       navigate('/projects');
-    } catch (error) {
-      setErrors({ general: 'Invalid email or password' });
+    } catch (error: any) {
+      setErrors({ general: error.message || 'Invalid email or password' });
     }
   };
 

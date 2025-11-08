@@ -3,6 +3,7 @@ export interface User {
   email: string;
   fullName: string;
   workEmail: string;
+  role?: string;
 }
 
 export interface Project {

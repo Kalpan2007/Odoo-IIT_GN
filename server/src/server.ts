@@ -17,13 +17,15 @@ import purchaseRoutes from './routes/purchase.routes';
 import expenseRoutes from './routes/expense.routes';
 import invoiceRoutes from './routes/invoice.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import roleRequestRoutes from './routes/roleRequest.routes'; // Add role request routes
 
 // Load environment variables
 dotenv.config();
 
 // Validate required environment variables
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your_super_secret_jwt_key_here') {
-  console.warn('WARNING: JWT_SECRET is not properly configured. Please set a strong secret in .env file for production.');
+if (!process.env.JWT_SECRET) {
+  console.error('ERROR: JWT_SECRET is not configured in .env file');
+  process.exit(1);
 }
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -76,6 +78,7 @@ app.use('/api/purchases', purchaseRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/role-requests', roleRequestRoutes); // Add role request routes
 
 // 404 handler
 app.use('*', (req, res) => {

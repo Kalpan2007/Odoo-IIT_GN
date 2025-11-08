@@ -30,6 +30,20 @@ CREATE TABLE profiles (
 );
 
 -- ==========================================
+-- ROLE REQUESTS
+-- ==========================================
+CREATE TABLE role_requests (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    current_role text NOT NULL CHECK (current_role IN ('admin', 'project_manager', 'team_member')),
+    requested_role text NOT NULL CHECK (requested_role IN ('admin', 'project_manager', 'team_member')),
+    status text DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    reason text,
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
+);
+
+-- ==========================================
 -- PROJECTS
 -- ==========================================
 CREATE TABLE projects (
@@ -208,6 +222,8 @@ CREATE INDEX IF NOT EXISTS idx_purchases_created_by ON purchases(created_by);
 CREATE INDEX IF NOT EXISTS idx_expenses_created_by ON expenses(created_by);
 CREATE INDEX IF NOT EXISTS idx_invoices_created_by ON invoices(created_by);
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
+CREATE INDEX IF NOT EXISTS idx_role_requests_user_id ON role_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_role_requests_status ON role_requests(status);
 
 -- ==========================================
 -- RLS POLICIES (DISABLED FOR DEVELOPMENT)

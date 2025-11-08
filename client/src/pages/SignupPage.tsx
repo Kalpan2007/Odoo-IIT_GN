@@ -50,8 +50,8 @@ export const SignupPage: React.FC = () => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    } else if (formData.password.length < 6) { // Changed from 8 to 6 to match backend
+      newErrors.password = 'Password must be at least 6 characters';
     }
 
     if (!formData.acceptTerms) {
@@ -77,8 +77,8 @@ export const SignupPage: React.FC = () => {
         password: formData.password
       });
       navigate('/projects');
-    } catch (error) {
-      setErrors({ general: 'Failed to create account. Please try again.' });
+    } catch (error: any) {
+      setErrors({ general: error.message || 'Failed to create account. Please try again.' });
     }
   };
 
