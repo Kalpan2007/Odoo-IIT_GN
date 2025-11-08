@@ -55,7 +55,7 @@ export const createRoleRequest = asyncHandler(async (req: AuthRequest, res: Resp
       .from('role_requests')
       .insert({
         user_id: userId,
-        current_role: req.user!.role,
+        current_user_role: req.user!.role, // Use the correct column name
         requested_role,
         reason,
         status: 'pending'

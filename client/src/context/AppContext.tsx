@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, Task, DashboardStats } from '../types';
-import { mockProjects, mockTasks, mockDashboardStats } from '../data/mockData';
+import { projectsAPI, tasksAPI, dashboardAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
 interface AppContextType {
   projects: Project[];
@@ -8,11 +9,14 @@ interface AppContextType {
   dashboardStats: DashboardStats;
   selectedProject: Project | null;
   setSelectedProject: (project: Project | null) => void;
-  addProject: (project: Omit<Project, 'id'>) => void;
-  updateProject: (id: string, project: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
-  addTask: (task: Omit<Task, 'id'>) => void;
-  updateTask: (id: string, task: Partial<Task>) => void;
+  addProject: (project: Omit<Project, 'id'>) => Promise<void>;
+  updateProject: (id: string, project: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  addTask: (task: Omit<Task, 'id'>) => Promise<void>;
+  updateTask: (id: string, task: Partial<Task>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  refreshData: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -26,57 +30,151 @@ export const useApp = () => {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    totalProjects: 0,
+    totalRevenue: 0,
+    totalExpenses: 0,
+    totalProfit: 0
+  });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [dashboardStats] = useState<DashboardStats>(mockDashboardStats);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-  const addProject = (projectData: Omit<Project, 'id'>) => {
-    const newProject: Project = {
-      id: Date.now().toString(),
-      ...projectData,
-      tags: projectData.tags || ["Services"],  // default tag
-      images: projectData.images || [
-        "/img/sample1.png",
-        "/img/sample2.png",
-        "/img/sample3.png",
-        "/img/sample4.png"
-      ],
-      managerImage: "/avatars/user1.png",
-      deadline: projectData.endDate || null,
-      tasksCount: 10,
-    };
-    setProjects(prev => [...prev, newProject]);
+  // Load data when user is authenticated
+  useEffect(() => {
+    if (user) {
+      refreshData();
+    } else {
+      // Clear data when user logs out
+      setProjects([]);
+      setTasks([]);
+      setDashboardStats({
+        totalProjects: 0,
+        totalRevenue: 0,
+        totalExpenses: 0,
+        totalProfit: 0
+      });
+    }
+  }, [user]);
+
+  const refreshData = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      // Fetch projects
+      const projectsResponse = await projectsAPI.getAll();
+      if (projectsResponse.success) {
+        setProjects(projectsResponse.projects || []);
+      }
+      
+      // Fetch tasks
+      const tasksResponse = await tasksAPI.getAll();
+      if (tasksResponse.success) {
+        setTasks(tasksResponse.tasks || []);
+      }
+      
+      // Fetch dashboard stats
+      const dashboardResponse = await dashboardAPI.getOverview();
+      if (dashboardResponse.success) {
+        setDashboardStats({
+          totalProjects: dashboardResponse.overview.total_projects || 0,
+          totalRevenue: dashboardResponse.overview.total_revenue || 0,
+          totalExpenses: dashboardResponse.overview.total_costs || 0,
+          totalProfit: dashboardResponse.overview.total_profit || 0
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateProject = (id: string, projectData: Partial<Project>) => {
-    setProjects(prev => 
-      prev.map(project => 
-        project.id === id ? { ...project, ...projectData } : project
-      )
-    );
+  const addProject = async (projectData: Omit<Project, 'id'>) => {
+    try {
+      const response = await projectsAPI.create(projectData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to create project');
+      }
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      throw error;
+    }
   };
 
-  const addTask = (taskData: Omit<Task, 'id'>) => {
-    const newTask: Task = {
-      ...taskData,
-      id: Date.now().toString()
-    };
-    setTasks(prev => [...prev, newTask]);
+  const updateProject = async (id: string, projectData: Partial<Project>) => {
+    try {
+      const response = await projectsAPI.update(id, projectData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to update project');
+      }
+    } catch (error) {
+      console.error('Failed to update project:', error);
+      throw error;
+    }
   };
 
-  const updateTask = (id: string, taskData: Partial<Task>) => {
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === id ? { ...task, ...taskData } : task
-      )
-    );
+  const deleteProject = async (id: string) => {
+    try {
+      const response = await projectsAPI.delete(id);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to delete project');
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      throw error;
+    }
   };
 
-  const deleteProject = (id: string) => {
-    setProjects(prev => prev.filter(project => project.id !== id));
-    // Also delete associated tasks
-    setTasks(prev => prev.filter(task => task.projectId !== id));
+  const addTask = async (taskData: Omit<Task, 'id'>) => {
+    try {
+      const response = await tasksAPI.create(taskData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to create task');
+      }
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      throw error;
+    }
+  };
+
+  const updateTask = async (id: string, taskData: Partial<Task>) => {
+    try {
+      const response = await tasksAPI.update(id, taskData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to update task');
+      }
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      throw error;
+    }
+  };
+
+  const deleteTask = async (id: string) => {
+    try {
+      const response = await tasksAPI.delete(id);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to delete task');
+      }
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      throw error;
+    }
   };
 
   return (
@@ -90,7 +188,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateProject,
       deleteProject,
       addTask,
-      updateTask
+      updateTask,
+      deleteTask,
+      refreshData,
+      isLoading
     }}>
       {children}
     </AppContext.Provider>

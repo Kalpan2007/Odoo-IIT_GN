@@ -1,22 +1,16 @@
 -- Test script for role requests functionality
 
--- Create a test user
-INSERT INTO users (id, email, password) 
-VALUES ('11111111-1111-1111-1111-111111111111', 'test-role-request@example.com', 'Test#1234')
-ON CONFLICT (email) DO NOTHING;
+-- Test data for role requests functionality
+-- This data is used for testing the role request feature
 
--- Create a test profile
-INSERT INTO profiles (id, email, full_name, role) 
-VALUES ('11111111-1111-1111-1111-111111111111', 'test-role-request@example.com', 'Test User', 'team_member')
-ON CONFLICT (id) DO NOTHING;
+-- Insert a test role request
+-- Note: This requires a valid user ID from the profiles table
+INSERT INTO role_requests (id, user_id, current_user_role, requested_role, reason, status)
+VALUES 
+  ('11111111-1111-1111-1111-111111111111', '550e8400-e29b-41d4-a716-446655440003', 'team_member', 'project_manager', 'Requesting project manager access for new project', 'pending');
 
--- Create a test role request
-INSERT INTO role_requests (id, user_id, current_role, requested_role, reason, status)
-VALUES ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'team_member', 'project_manager', 'Need project management access for new project', 'pending')
-ON CONFLICT (id) DO NOTHING;
-
--- Verify the role request was created
-SELECT * FROM role_requests WHERE user_id = '11111111-1111-1111-1111-111111111111';
+-- Verify the insertion
+SELECT * FROM role_requests WHERE id = '11111111-1111-1111-1111-111111111111';
 
 -- Update the role request status to approved
 UPDATE role_requests 

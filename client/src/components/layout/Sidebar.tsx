@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { 
   FiHome, 
   FiFolder, 
@@ -9,22 +10,54 @@ import {
   FiCreditCard,
   FiFileText,
   FiBarChart,
-  FiDollarSign
+  FiDollarSign,
+  FiUserPlus
 } from 'react-icons/fi';
 
-const navigation = [
-  { name: 'Dashboard', to: '/dashboard', icon: FiHome },
-  { name: 'Projects', to: '/projects', icon: FiFolder },
-  { name: 'Tasks', to: '/tasks', icon: FiCheckSquare },
-  { name: 'Sales Orders', to: '/sales-orders', icon: FiShoppingCart },
-  { name: 'Purchases', to: '/purchases', icon: FiTruck },
-  { name: 'Expenses', to: '/expenses', icon: FiCreditCard },
-  { name: 'Invoices', to: '/invoices', icon: FiFileText },
-  { name: 'Vendor Bills', to: '/vendor-bills', icon: FiDollarSign },
-  { name: 'Reports', to: '/reports', icon: FiBarChart },
-];
-
 export const Sidebar: React.FC = () => {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // Base navigation items
+  const baseNavigation = [
+    { name: 'Dashboard', to: '/dashboard', icon: FiHome },
+    { name: 'Projects', to: '/projects', icon: FiFolder },
+    { name: 'Tasks', to: '/tasks', icon: FiCheckSquare },
+  ];
+
+  // Admin/PM navigation items
+  const adminPmNavigation = [
+    { name: 'Sales Orders', to: '/sales-orders', icon: FiShoppingCart },
+    { name: 'Purchases', to: '/purchases', icon: FiTruck },
+    { name: 'Expenses', to: '/expenses', icon: FiCreditCard },
+    { name: 'Invoices', to: '/invoices', icon: FiFileText },
+    { name: 'Vendor Bills', to: '/vendor-bills', icon: FiDollarSign },
+  ];
+
+  // All users navigation items
+  const allUsersNavigation = [
+    { name: 'Reports', to: '/reports', icon: FiBarChart },
+  ];
+
+  // Team member specific navigation
+  const teamMemberNavigation = user?.role === 'team_member' ? [
+    { name: 'Request Role Change', to: '/role-request', icon: FiUserPlus },
+  ] : [];
+
+  // Settings is available for all users
+  const settingsNavigation = [
+    { name: 'Settings', to: '/settings', icon: FiBarChart },
+  ];
+
+  // Combine navigation items based on user role
+  const navigation = [
+    ...baseNavigation,
+    ...(user?.role === 'admin' || user?.role === 'project_manager' ? adminPmNavigation : []),
+    ...allUsersNavigation,
+    ...teamMemberNavigation,
+    ...settingsNavigation,
+  ];
+
   return (
     <div className="bg-white w-64 min-h-screen border-r border-gray-200">
       <nav className="mt-8 px-4">

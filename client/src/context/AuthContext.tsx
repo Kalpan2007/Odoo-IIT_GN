@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
+import { authAPI, roleRequestsAPI } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -7,13 +8,10 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (userData: { fullName: string; email: string; workEmail: string; password: string }) => Promise<void>;
   logout: () => void;
-  requestRoleChange: (newRole: string) => Promise<void>; // Add role change request
+  requestRoleChange: (newRole: string, reason: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// API base URL - adjust as needed for your environment
-const API_BASE_URL = 'http://localhost:5000/api';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -34,21 +32,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (token) {
         try {
           // Get user profile
-          const response = await fetch(`${API_BASE_URL}/auth/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
+          const response = await authAPI.getProfile();
           
-          if (response.ok) {
-            const data = await response.json();
+          if (response.success) {
             setUser({
-              id: data.user.id,
-              email: data.user.email,
-              fullName: data.user.full_name,
-              workEmail: data.user.email,
-              role: data.user.role || 'team_member'
+              id: response.user.id,
+              email: response.user.email,
+              fullName: response.user.full_name,
+              workEmail: response.user.email,
+              role: response.user.role || 'team_member'
             });
           } else {
             // Token invalid, clear it
@@ -69,28 +61,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await authAPI.login(email, password);
       
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
+      if (response.success) {
         // Save token and user data
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', response.token);
         setUser({
-          id: data.user.id,
-          email: data.user.email,
-          fullName: data.user.full_name,
-          workEmail: data.user.email,
-          role: data.user.role || 'team_member'
+          id: response.user.id,
+          email: response.user.email,
+          fullName: response.user.full_name,
+          workEmail: response.user.email,
+          role: response.user.role || 'team_member'
         });
       } else {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(response.message || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -104,26 +88,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          full_name: userData.fullName,
-          email: userData.email,
-          password: userData.password,
-          role: 'team_member' // Default role is always team_member
-        }),
+      const response = await authAPI.signup({
+        full_name: userData.fullName,
+        email: userData.email,
+        password: userData.password
       });
       
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
+      if (response.success) {
         // Auto-login after signup
         await login(userData.email, userData.password);
       } else {
-        throw new Error(data.message || 'Signup failed');
+        throw new Error(response.message || 'Signup failed');
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -137,33 +112,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     localStorage.removeItem('token');
     
-    // Also logout from Supabase if needed
-    fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }).catch(() => {
+    // Also logout from backend
+    authAPI.logout().catch(() => {
       // Ignore errors during logout
     });
   };
 
-  const requestRoleChange = async (newRole: string) => {
+  const requestRoleChange = async (newRole: string, reason: string) => {
     if (!user) {
       throw new Error('User not authenticated');
     }
     
-    // In a real implementation, this would send a request to admins
-    // For now, we'll just simulate it
-    console.log(`User ${user.id} requested role change to ${newRole}`);
-    
-    // In a real app, you would:
-    // 1. Send a request to the backend to create a role change request
-    // 2. Notify admins
-    // 3. Wait for admin approval
-    
-    // For demo purposes, we'll just show a message
-    alert(`Role change request to ${newRole} has been sent to administrators for approval.`);
+    try {
+      const response = await roleRequestsAPI.create({
+        requested_role: newRole,
+        reason: reason
+      });
+      
+      if (response.success) {
+        // Role request created successfully
+        return response;
+      } else {
+        throw new Error(response.message || 'Failed to request role change');
+      }
+    } catch (error) {
+      console.error('Role change request error:', error);
+      throw error;
+    }
   };
 
   return (

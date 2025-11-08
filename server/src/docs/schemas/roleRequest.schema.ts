@@ -10,7 +10,7 @@ export const roleRequestSchemas = {
         type: 'string',
         format: 'uuid'
       },
-      current_role: {
+      current_user_role: { // Changed from current_role to current_user_role
         type: 'string',
         enum: ['admin', 'project_manager', 'team_member']
       },

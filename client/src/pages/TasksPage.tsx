@@ -5,10 +5,12 @@ import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 export const TasksPage: React.FC = () => {
-  const { tasks, projects, addTask, updateTask, deleteTask } = useApp();
+  const { tasks, projects, addTask, updateTask, deleteTask, isLoading } = useApp();
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [isCoverModalOpen, setIsCoverModalOpen] = useState(false);
@@ -36,16 +38,21 @@ export const TasksPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingTask) {
-      updateTask(editingTask.id, formData);
-    } else {
-      addTask({ ...formData });
+    try {
+      if (editingTask) {
+        await updateTask(editingTask.id, formData);
+      } else {
+        await addTask({ ...formData });
+      }
+      setIsModalOpen(false);
+      setEditingTask(null);
+      resetForm();
+    } catch (error) {
+      console.error('Failed to save task:', error);
+      alert('Failed to save task. Please try again.');
     }
-    setIsModalOpen(false);
-    setEditingTask(null);
-    resetForm();
   };
 
   const resetForm = () => {
@@ -67,8 +74,19 @@ export const TasksPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    deleteTask(id);
+  const handleDelete = async (id: string) => {
+    try {
+      // Only admins and project managers can delete tasks
+      if (user?.role !== 'admin' && user?.role !== 'project_manager') {
+        alert('Only admins and project managers can delete tasks.');
+        return;
+      }
+      
+      await deleteTask(id);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      alert('Failed to delete task. Please try again.');
+    }
   };
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,11 +97,16 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const onDragEnd = (result: any) => {
+  const onDragEnd = async (result: any) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
     if (destination.droppableId === source.droppableId) return;
-    updateTask(draggableId, { status: destination.droppableId });
+    
+    try {
+      await updateTask(draggableId, { status: destination.droppableId as any });
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+    }
   };
 
   const renderPriorityStars = (priority: string) => {
@@ -106,120 +129,126 @@ export const TasksPage: React.FC = () => {
         </Button>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {Object.entries(taskColumns).map(([status, columnTasks]) => (
-            <Droppable droppableId={status} key={status}>
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="bg-gray-50 rounded-lg p-4 flex flex-col"
-                >
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 capitalize">
-                    {status === 'todo' ? 'New' : status.replace('-', ' ')}
-                  </h3>
+      {isLoading ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">Loading tasks...</p>
+        </div>
+      ) : (
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {Object.entries(taskColumns).map(([status, columnTasks]) => (
+              <Droppable droppableId={status} key={status}>
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="bg-gray-50 rounded-lg p-4 flex flex-col"
+                  >
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 capitalize">
+                      {status === 'todo' ? 'New' : status.replace('-', ' ')}
+                    </h3>
 
-                  {columnTasks
-                    .sort((a, b) => {
-                      const priorityOrder = { high: 1, medium: 2, low: 3 };
-                      return (
-                        priorityOrder[a.priority] - priorityOrder[b.priority] ||
-                        new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
-                      );
-                    })
-                    .map((task, index) => (
-                      <Draggable key={task.id} draggableId={task.id} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="bg-white rounded-xl shadow-sm border p-3 mb-3 hover:shadow-md transition"
-                          >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <div className="flex space-x-2 mb-1">
-                                  {task.tags?.map((tag: string) => (
-                                    <span
-                                      key={tag}
-                                      className={`text-xs px-2 py-0.5 rounded-full ${
-                                        tag === 'Bug'
-                                          ? 'bg-red-100 text-red-700'
-                                          : 'bg-green-100 text-green-700'
-                                      }`}
-                                    >
-                                      {tag}
-                                    </span>
-                                  ))}
+                    {columnTasks
+                      .sort((a, b) => {
+                        const priorityOrder = { high: 1, medium: 2, low: 3 };
+                        return (
+                          priorityOrder[a.priority] - priorityOrder[b.priority] ||
+                          new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+                        );
+                      })
+                      .map((task, index) => (
+                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="bg-white rounded-xl shadow-sm border p-3 mb-3 hover:shadow-md transition"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="flex space-x-2 mb-1">
+                                    {task.tags?.map((tag: string) => (
+                                      <span
+                                        key={tag}
+                                        className={`text-xs px-2 py-0.5 rounded-full ${
+                                          tag === 'Bug'
+                                            ? 'bg-red-100 text-red-700'
+                                            : 'bg-green-100 text-green-700'
+                                        }`}
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <p className="text-sm text-gray-700 font-semibold">
+                                    Project: {projects.find((p) => p.id === task.projectId)?.name || 'N/A'}
+                                  </p>
+                                  <p className="text-gray-800 font-bold mt-1">{task.name}</p>
                                 </div>
-                                <p className="text-sm text-gray-700 font-semibold">
-                                  Project: {projects.find((p) => p.id === task.projectId)?.name || 'N/A'}
-                                </p>
-                                <p className="text-gray-800 font-bold mt-1">{task.name}</p>
-                              </div>
 
-                              <div className="flex flex-col items-end">
-                                {renderPriorityStars(task.priority)}
-                                <div className="relative group">
-                                  <FiMoreVertical className="cursor-pointer mt-1 text-gray-500" />
-                                  <div className="hidden group-hover:block absolute right-0 mt-1 bg-white border rounded shadow-lg w-28 z-10">
-                                    <button
-                                      className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-100"
-                                      onClick={() => openEditModal(task)}
-                                    >
-                                      Edit
-                                    </button>
-                                    <button
-                                      className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-100"
-                                      onClick={() => handleDelete(task.id)}
-                                    >
-                                      Delete
-                                    </button>
-                                    <button
-                                      className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-100"
-                                      onClick={() => {
-                                        setSelectedTask(task);
-                                        setIsCoverModalOpen(true);
-                                      }}
-                                    >
-                                      Change Cover
-                                    </button>
+                                <div className="flex flex-col items-end">
+                                  {renderPriorityStars(task.priority)}
+                                  <div className="relative group">
+                                    <FiMoreVertical className="cursor-pointer mt-1 text-gray-500" />
+                                    <div className="hidden group-hover:block absolute right-0 mt-1 bg-white border rounded shadow-lg w-28 z-10">
+                                      <button
+                                        className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-100"
+                                        onClick={() => openEditModal(task)}
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-100"
+                                        onClick={() => handleDelete(task.id)}
+                                      >
+                                        Delete
+                                      </button>
+                                      <button
+                                        className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-100"
+                                        onClick={() => {
+                                          setSelectedTask(task);
+                                          setIsCoverModalOpen(true);
+                                        }}
+                                      >
+                                        Change Cover
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
 
-                            {task.coverImage && (
-                              <img
-                                src={task.coverImage}
-                                alt="Cover"
-                                className="w-full h-32 object-cover rounded-lg my-2"
-                              />
-                            )}
-
-                            <div className="flex items-center justify-between text-sm text-gray-500 mt-1">
-                              <div className="flex items-center space-x-1">
+                              {task.coverImage && (
                                 <img
-                                  src={task.assigneeImage || '/default-avatar.png'}
-                                  alt="assignee"
-                                  className="w-6 h-6 rounded-full"
+                                  src={task.coverImage}
+                                  alt="Cover"
+                                  className="w-full h-32 object-cover rounded-lg my-2"
                                 />
-                                <span>{task.assignee}</span>
+                              )}
+
+                              <div className="flex items-center justify-between text-sm text-gray-500 mt-1">
+                                <div className="flex items-center space-x-1">
+                                  <img
+                                    src={task.assigneeImage || '/default-avatar.png'}
+                                    alt="assignee"
+                                    className="w-6 h-6 rounded-full"
+                                  />
+                                  <span>{task.assignee}</span>
+                                </div>
+                                <span>{task.deadline}</span>
                               </div>
-                              <span>{task.deadline}</span>
                             </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                  {provided.placeholder} 
-                </div>
-              )}
-            </Droppable>
-          ))}
-        </div>
-      </DragDropContext>
+                          )}
+                        </Draggable>
+                      ))}
+                    {provided.placeholder} 
+                  </div>
+                )}
+              </Droppable>
+            ))}
+          </div>
+        </DragDropContext>
+      )}
 
       {/* Create/Edit Modal */}
       <Modal

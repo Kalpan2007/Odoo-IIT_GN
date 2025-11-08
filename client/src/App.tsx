@@ -11,6 +11,7 @@ import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { TasksPage } from './pages/TasksPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { RoleRequestPage } from './pages/RoleRequestPage';
 
 function App() {
   return (
@@ -20,7 +21,7 @@ function App() {
           <Routes>
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<Navigate to="/projects" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             <Route path="/dashboard" element={
               <ProtectedRoute>
@@ -43,6 +44,12 @@ function App() {
             <Route path="/tasks" element={
               <ProtectedRoute>
                 <TasksPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/role-request" element={
+              <ProtectedRoute>
+                <RoleRequestPage />
               </ProtectedRoute>
             } />
             
