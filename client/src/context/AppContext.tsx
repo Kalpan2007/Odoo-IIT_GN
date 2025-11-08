@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Project, Task, DashboardStats } from '../types';
-import { projectsAPI, tasksAPI, dashboardAPI } from '../services/api';
+import { Project, Task, DashboardStats, SalesOrder, Purchase, Expense, Invoice, Timesheet } from '../types';
+import { projectsAPI, tasksAPI, dashboardAPI, salesAPI, purchasesAPI, expensesAPI, invoicesAPI, timesheetsAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 
 // Define backend response types
@@ -40,6 +40,11 @@ interface BackendTaskResponse {
 interface AppContextType {
   projects: Project[];
   tasks: Task[];
+  salesOrders: SalesOrder[];
+  purchases: Purchase[];
+  expenses: Expense[];
+  invoices: Invoice[];
+  timesheets: Timesheet[];
   dashboardStats: DashboardStats;
   selectedProject: Project | null;
   setSelectedProject: (project: Project | null) => void;
@@ -49,6 +54,21 @@ interface AppContextType {
   addTask: (task: Omit<Task, 'id'>) => Promise<void>;
   updateTask: (id: string, task: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
+  addSalesOrder: (salesOrder: Omit<SalesOrder, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => Promise<void>;
+  updateSalesOrder: (id: string, salesOrder: Partial<SalesOrder>) => Promise<void>;
+  deleteSalesOrder: (id: string) => Promise<void>;
+  addPurchase: (purchase: Omit<Purchase, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => Promise<void>;
+  updatePurchase: (id: string, purchase: Partial<Purchase>) => Promise<void>;
+  deletePurchase: (id: string) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => Promise<void>;
+  updateExpense: (id: string, expense: Partial<Expense>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => Promise<void>;
+  updateInvoice: (id: string, invoice: Partial<Invoice>) => Promise<void>;
+  deleteInvoice: (id: string) => Promise<void>;
+  addTimesheet: (timesheet: Omit<Timesheet, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateTimesheet: (id: string, timesheet: Partial<Timesheet>) => Promise<void>;
+  deleteTimesheet: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
   isLoading: boolean;
 }
@@ -66,6 +86,11 @@ export const useApp = () => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalProjects: 0,
     totalRevenue: 0,
@@ -84,6 +109,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Clear data when user logs out
       setProjects([]);
       setTasks([]);
+      setSalesOrders([]);
+      setPurchases([]);
+      setExpenses([]);
+      setInvoices([]);
+      setTimesheets([]);
       setDashboardStats({
         totalProjects: 0,
         totalRevenue: 0,
@@ -141,6 +171,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           priority: task.priority === 'urgent' ? 'high' : task.priority
         }));
         setTasks(mappedTasks);
+      }
+      
+      // Fetch sales orders
+      const salesResponse = await salesAPI.getAll();
+      if (salesResponse.success) {
+        setSalesOrders(salesResponse.sales_orders || []);
+      }
+      
+      // Fetch purchases
+      const purchasesResponse = await purchasesAPI.getAll();
+      if (purchasesResponse.success) {
+        setPurchases(purchasesResponse.purchases || []);
+      }
+      
+      // Fetch expenses
+      const expensesResponse = await expensesAPI.getAll();
+      if (expensesResponse.success) {
+        setExpenses(expensesResponse.expenses || []);
+      }
+      
+      // Fetch invoices
+      const invoicesResponse = await invoicesAPI.getAll();
+      if (invoicesResponse.success) {
+        setInvoices(invoicesResponse.invoices || []);
+      }
+      
+      // Fetch timesheets
+      const timesheetsResponse = await timesheetsAPI.getAll();
+      if (timesheetsResponse.success) {
+        setTimesheets(timesheetsResponse.timesheets || []);
       }
       
       // Fetch dashboard stats
@@ -308,10 +368,225 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const addSalesOrder = async (salesOrderData: Omit<SalesOrder, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    try {
+      const response = await salesAPI.create(salesOrderData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to create sales order');
+      }
+    } catch (error) {
+      console.error('Failed to create sales order:', error);
+      throw error;
+    }
+  };
+
+  const updateSalesOrder = async (id: string, salesOrderData: Partial<SalesOrder>) => {
+    try {
+      const response = await salesAPI.update(id, salesOrderData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to update sales order');
+      }
+    } catch (error) {
+      console.error('Failed to update sales order:', error);
+      throw error;
+    }
+  };
+
+  const deleteSalesOrder = async (id: string) => {
+    try {
+      const response = await salesAPI.delete(id);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to delete sales order');
+      }
+    } catch (error) {
+      console.error('Failed to delete sales order:', error);
+      throw error;
+    }
+  };
+
+  const addPurchase = async (purchaseData: Omit<Purchase, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    try {
+      const response = await purchasesAPI.create(purchaseData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to create purchase');
+      }
+    } catch (error) {
+      console.error('Failed to create purchase:', error);
+      throw error;
+    }
+  };
+
+  const updatePurchase = async (id: string, purchaseData: Partial<Purchase>) => {
+    try {
+      const response = await purchasesAPI.update(id, purchaseData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to update purchase');
+      }
+    } catch (error) {
+      console.error('Failed to update purchase:', error);
+      throw error;
+    }
+  };
+
+  const deletePurchase = async (id: string) => {
+    try {
+      const response = await purchasesAPI.delete(id);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to delete purchase');
+      }
+    } catch (error) {
+      console.error('Failed to delete purchase:', error);
+      throw error;
+    }
+  };
+
+  const addExpense = async (expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    try {
+      const response = await expensesAPI.create(expenseData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to create expense');
+      }
+    } catch (error) {
+      console.error('Failed to create expense:', error);
+      throw error;
+    }
+  };
+
+  const updateExpense = async (id: string, expenseData: Partial<Expense>) => {
+    try {
+      const response = await expensesAPI.update(id, expenseData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to update expense');
+      }
+    } catch (error) {
+      console.error('Failed to update expense:', error);
+      throw error;
+    }
+  };
+
+  const deleteExpense = async (id: string) => {
+    try {
+      const response = await expensesAPI.delete(id);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to delete expense');
+      }
+    } catch (error) {
+      console.error('Failed to delete expense:', error);
+      throw error;
+    }
+  };
+
+  const addInvoice = async (invoiceData: Omit<Invoice, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    try {
+      const response = await invoicesAPI.create(invoiceData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to create invoice');
+      }
+    } catch (error) {
+      console.error('Failed to create invoice:', error);
+      throw error;
+    }
+  };
+
+  const updateInvoice = async (id: string, invoiceData: Partial<Invoice>) => {
+    try {
+      const response = await invoicesAPI.update(id, invoiceData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to update invoice');
+      }
+    } catch (error) {
+      console.error('Failed to update invoice:', error);
+      throw error;
+    }
+  };
+
+  const deleteInvoice = async (id: string) => {
+    try {
+      const response = await invoicesAPI.delete(id);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to delete invoice');
+      }
+    } catch (error) {
+      console.error('Failed to delete invoice:', error);
+      throw error;
+    }
+  };
+
+  const addTimesheet = async (timesheetData: Omit<Timesheet, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const response = await timesheetsAPI.create(timesheetData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to create timesheet');
+      }
+    } catch (error) {
+      console.error('Failed to create timesheet:', error);
+      throw error;
+    }
+  };
+
+  const updateTimesheet = async (id: string, timesheetData: Partial<Timesheet>) => {
+    try {
+      const response = await timesheetsAPI.update(id, timesheetData);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to update timesheet');
+      }
+    } catch (error) {
+      console.error('Failed to update timesheet:', error);
+      throw error;
+    }
+  };
+
+  const deleteTimesheet = async (id: string) => {
+    try {
+      const response = await timesheetsAPI.delete(id);
+      if (response.success) {
+        await refreshData();
+      } else {
+        throw new Error(response.message || 'Failed to delete timesheet');
+      }
+    } catch (error) {
+      console.error('Failed to delete timesheet:', error);
+      throw error;
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       projects,
       tasks,
+      salesOrders,
+      purchases,
+      expenses,
+      invoices,
+      timesheets,
       dashboardStats,
       selectedProject,
       setSelectedProject,
@@ -321,6 +596,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addTask,
       updateTask,
       deleteTask,
+      addSalesOrder,
+      updateSalesOrder,
+      deleteSalesOrder,
+      addPurchase,
+      updatePurchase,
+      deletePurchase,
+      addExpense,
+      updateExpense,
+      deleteExpense,
+      addInvoice,
+      updateInvoice,
+      deleteInvoice,
+      addTimesheet,
+      updateTimesheet,
+      deleteTimesheet,
       refreshData,
       isLoading
     }}>

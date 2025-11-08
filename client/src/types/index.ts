@@ -40,52 +40,79 @@ export interface Task {
 
 export interface SalesOrder {
   id: string;
-  orderId: string;
-  customer: string;
-  projectId: string;
-  orderLines: OrderLine[];
-  subtotal: number;
-  total: number;
-  status: 'draft' | 'sent' | 'paid';
+  order_number: string;
+  client: string;
+  project_id?: string;
+  amount: number;
+  status: 'draft' | 'sent' | 'accepted' | 'completed' | 'cancelled';
+  order_date: string;
+  delivery_date?: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
-export interface PurchaseOrder {
+export interface Purchase {
   id: string;
-  orderId: string;
+  purchase_number: string;
   vendor: string;
-  projectId: string;
-  orderLines: OrderLine[];
-  subtotal: number;
-  total: number;
-  status: 'draft' | 'ordered' | 'received';
-}
-
-export interface OrderLine {
-  id: string;
-  product: string;
-  quantity: number;
-  price: number;
-  total: number;
+  project_id?: string;
+  amount: number;
+  status: 'draft' | 'ordered' | 'received' | 'paid' | 'cancelled';
+  order_date: string;
+  delivery_date?: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 export interface Expense {
   id: string;
-  name: string;
-  projectId: string;
+  title: string;
   amount: number;
-  description: string;
-  date: string;
   category: string;
+  project_id?: string;
+  description?: string;
+  receipt_url?: string;
+  expense_date: string;
+  approved: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 export interface Invoice {
   id: string;
-  invoiceId: string;
-  customer: string;
-  projectId: string;
+  invoice_number: string;
+  client: string;
+  project_id?: string;
   amount: number;
-  dueDate: string;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
+  tax_amount: number;
+  total_amount: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  issue_date: string;
+  due_date: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}
+
+export interface Timesheet {
+  id: string;
+  user_id: string;
+  project_id?: string;
+  task_id?: string;
+  description: string;
+  hours: number;
+  rate?: number;
+  date: string;
+  billable: boolean;
+  approved: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DashboardStats {

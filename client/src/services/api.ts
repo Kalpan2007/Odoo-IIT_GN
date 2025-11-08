@@ -24,6 +24,64 @@ interface BackendTask {
   due_date?: string;
 }
 
+interface BackendSalesOrder {
+  order_number: string;
+  client: string;
+  project_id?: string;
+  amount: number;
+  status: 'draft' | 'sent' | 'accepted' | 'completed' | 'cancelled';
+  order_date: string;
+  delivery_date?: string;
+  description?: string;
+}
+
+interface BackendPurchase {
+  purchase_number: string;
+  vendor: string;
+  project_id?: string;
+  amount: number;
+  status: 'draft' | 'ordered' | 'received' | 'paid' | 'cancelled';
+  order_date: string;
+  delivery_date?: string;
+  description?: string;
+}
+
+interface BackendExpense {
+  title: string;
+  amount: number;
+  category: string;
+  project_id?: string;
+  description?: string;
+  receipt_url?: string;
+  expense_date: string;
+  approved?: boolean;
+}
+
+interface BackendInvoice {
+  invoice_number: string;
+  client: string;
+  project_id?: string;
+  amount: number;
+  tax_amount: number;
+  total_amount: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  issue_date: string;
+  due_date: string;
+  description?: string;
+}
+
+interface BackendTimesheet {
+  user_id?: string;
+  project_id?: string;
+  task_id?: string;
+  description: string;
+  hours: number;
+  rate?: number;
+  date: string;
+  billable?: boolean;
+  approved?: boolean;
+}
+
 const API_BASE_URL = 'http://localhost:5000/api';
 
 // Helper function to get auth headers
@@ -175,6 +233,246 @@ export const tasksAPI = {
   
   delete: async (id: string) => {
     const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  }
+};
+
+// Sales Orders API
+export const salesAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/sales`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  getById: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/sales/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  create: async (salesData: BackendSalesOrder) => {
+    const response = await fetch(`${API_BASE_URL}/sales`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(salesData),
+    });
+    
+    return response.json();
+  },
+  
+  update: async (id: string, salesData: Partial<BackendSalesOrder>) => {
+    const response = await fetch(`${API_BASE_URL}/sales/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(salesData),
+    });
+    
+    return response.json();
+  },
+  
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/sales/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  }
+};
+
+// Purchases API
+export const purchasesAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/purchases`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  getById: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/purchases/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  create: async (purchaseData: BackendPurchase) => {
+    const response = await fetch(`${API_BASE_URL}/purchases`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(purchaseData),
+    });
+    
+    return response.json();
+  },
+  
+  update: async (id: string, purchaseData: Partial<BackendPurchase>) => {
+    const response = await fetch(`${API_BASE_URL}/purchases/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(purchaseData),
+    });
+    
+    return response.json();
+  },
+  
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/purchases/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  }
+};
+
+// Expenses API
+export const expensesAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/expenses`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  getById: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/expenses/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  create: async (expenseData: BackendExpense) => {
+    const response = await fetch(`${API_BASE_URL}/expenses`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(expenseData),
+    });
+    
+    return response.json();
+  },
+  
+  update: async (id: string, expenseData: Partial<BackendExpense>) => {
+    const response = await fetch(`${API_BASE_URL}/expenses/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(expenseData),
+    });
+    
+    return response.json();
+  },
+  
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/expenses/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  }
+};
+
+// Invoices API
+export const invoicesAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/invoices`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  getById: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  create: async (invoiceData: BackendInvoice) => {
+    const response = await fetch(`${API_BASE_URL}/invoices`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(invoiceData),
+    });
+    
+    return response.json();
+  },
+  
+  update: async (id: string, invoiceData: Partial<BackendInvoice>) => {
+    const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(invoiceData),
+    });
+    
+    return response.json();
+  },
+  
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  }
+};
+
+// Timesheets API
+export const timesheetsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/timesheets`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  getById: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/timesheets/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    
+    return response.json();
+  },
+  
+  create: async (timesheetData: BackendTimesheet) => {
+    const response = await fetch(`${API_BASE_URL}/timesheets`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(timesheetData),
+    });
+    
+    return response.json();
+  },
+  
+  update: async (id: string, timesheetData: Partial<BackendTimesheet>) => {
+    const response = await fetch(`${API_BASE_URL}/timesheets/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(timesheetData),
+    });
+    
+    return response.json();
+  },
+  
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/timesheets/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });

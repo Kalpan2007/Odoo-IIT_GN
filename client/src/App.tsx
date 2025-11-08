@@ -11,6 +11,11 @@ import { TasksPage } from './pages/TasksPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { RoleRequestPage } from './pages/RoleRequestPage';
+import { SalesOrdersPage } from './pages/SalesOrdersPage';
+import { PurchasesPage } from './pages/PurchasesPage';
+import { ExpensesPage } from './pages/ExpensesPage';
+import { InvoicesPage } from './pages/InvoicesPage';
+import { TimesheetsPage } from './pages/TimesheetsPage';
 
 function App() {
   return (
@@ -54,25 +59,25 @@ function App() {
             
             <Route path="/sales-orders" element={
               <ProtectedRoute>
-                <PlaceholderPage title="Sales Orders" description="Manage customer sales orders and quotations" />
+                <SalesOrdersPage />
               </ProtectedRoute>
             } />
             
             <Route path="/purchases" element={
               <ProtectedRoute>
-                <PlaceholderPage title="Purchase Orders" description="Track vendor purchases and procurement" />
+                <PurchasesPage />
               </ProtectedRoute>
             } />
             
             <Route path="/expenses" element={
               <ProtectedRoute>
-                <PlaceholderPage title="Expenses" description="Monitor project expenses and costs" />
+                <ExpensesPage />
               </ProtectedRoute>
             } />
             
             <Route path="/invoices" element={
               <ProtectedRoute>
-                <PlaceholderPage title="Invoices" description="Create and manage customer invoices" />
+                <InvoicesPage />
               </ProtectedRoute>
             } />
             
@@ -85,6 +90,12 @@ function App() {
             <Route path="/reports" element={
               <ProtectedRoute>
                 <PlaceholderPage title="Reports" description="Generate financial and project reports" />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/timesheets" element={
+              <ProtectedRoute>
+                <TimesheetsPage />
               </ProtectedRoute>
             } />
             
