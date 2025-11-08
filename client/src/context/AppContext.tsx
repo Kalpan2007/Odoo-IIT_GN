@@ -3,6 +3,40 @@ import { Project, Task, DashboardStats } from '../types';
 import { projectsAPI, tasksAPI, dashboardAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 
+// Define backend response types
+interface BackendProjectResponse {
+  id: string;
+  name: string;
+  client: string;
+  start_date: string;
+  end_date?: string;
+  budget: number;
+  status: string;
+  description?: string;
+  revenue?: number;
+  cost?: number;
+  profit?: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}
+
+interface BackendTaskResponse {
+  id: string;
+  title: string;
+  description?: string;
+  project_id?: string;
+  assigned_to?: string;
+  status: string;
+  priority: string;
+  estimated_hours?: number;
+  actual_hours?: number;
+  due_date?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}
+
 interface AppContextType {
   projects: Project[];
   tasks: Task[];
@@ -67,13 +101,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Fetch projects
       const projectsResponse = await projectsAPI.getAll();
       if (projectsResponse.success) {
-        setProjects(projectsResponse.projects || []);
+        // Map backend project data to frontend project data
+        const mappedProjects = projectsResponse.projects.map((project: BackendProjectResponse) => ({
+          id: project.id,
+          name: project.name,
+          client: project.client,
+          startDate: project.start_date,
+          endDate: project.end_date || '',
+          description: project.description || '',
+          progress: 0, // This would need to be calculated
+          revenue: project.revenue || 0,
+          expenses: project.cost || 0,
+          profit: project.profit || 0,
+          status: project.status === 'in_progress' ? 'active' : 
+                  project.status === 'completed' ? 'completed' : 'on-hold',
+          priority: 'medium', // Default priority
+          tags: [], // Default tags
+          images: [], // Default images
+          managerImage: '', // Default manager image
+          deadline: project.end_date || null,
+          tasksCount: 0 // This would need to be calculated
+        }));
+        setProjects(mappedProjects);
       }
       
       // Fetch tasks
       const tasksResponse = await tasksAPI.getAll();
       if (tasksResponse.success) {
-        setTasks(tasksResponse.tasks || []);
+        // Map backend task data to frontend task data
+        const mappedTasks = tasksResponse.tasks.map((task: BackendTaskResponse) => ({
+          id: task.id,
+          name: task.title,
+          assignee: '', // This would need to be fetched from user data
+          projectId: task.project_id || '',
+          description: task.description || '',
+          deadline: task.due_date || '',
+          status: task.status === 'in_progress' ? 'in-progress' : 
+                  task.status === 'completed' ? 'done' : 'todo',
+          priority: task.priority === 'urgent' ? 'high' : task.priority
+        }));
+        setTasks(mappedTasks);
       }
       
       // Fetch dashboard stats
@@ -95,7 +162,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addProject = async (projectData: Omit<Project, 'id'>) => {
     try {
-      const response = await projectsAPI.create(projectData);
+      // Map frontend project data to backend project data
+      const backendProjectData = {
+        name: projectData.name,
+        client: projectData.client,
+        start_date: projectData.startDate,
+        end_date: projectData.endDate,
+        budget: 0, // Default budget
+        status: 'planning' as const,
+        description: projectData.description
+      };
+      
+      const response = await projectsAPI.create(backendProjectData);
       if (response.success) {
         await refreshData();
       } else {
@@ -109,7 +187,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateProject = async (id: string, projectData: Partial<Project>) => {
     try {
-      const response = await projectsAPI.update(id, projectData);
+      // Map frontend project data to backend project data
+      const backendProjectData: {
+        name?: string;
+        client?: string;
+        start_date?: string;
+        end_date?: string;
+        budget?: number;
+        status?: 'planning' | 'in_progress' | 'completed' | 'on_hold' | 'cancelled';
+        description?: string;
+        revenue?: number;
+        cost?: number;
+        profit?: number;
+      } = {};
+      
+      if (projectData.name) backendProjectData.name = projectData.name;
+      if (projectData.client) backendProjectData.client = projectData.client;
+      if (projectData.startDate) backendProjectData.start_date = projectData.startDate;
+      if (projectData.endDate) backendProjectData.end_date = projectData.endDate;
+      if (projectData.description) backendProjectData.description = projectData.description;
+      
+      const response = await projectsAPI.update(id, backendProjectData);
       if (response.success) {
         await refreshData();
       } else {
@@ -137,7 +235,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addTask = async (taskData: Omit<Task, 'id'>) => {
     try {
-      const response = await tasksAPI.create(taskData);
+      // Map frontend task data to backend task data
+      const backendTaskData = {
+        title: taskData.name,
+        description: taskData.description,
+        project_id: taskData.projectId,
+        status: taskData.status === 'in-progress' ? 'in_progress' : 
+                taskData.status === 'done' ? 'completed' : 'todo',
+        priority: taskData.priority,
+        due_date: taskData.deadline
+      } as const;
+      
+      const response = await tasksAPI.create(backendTaskData);
       if (response.success) {
         await refreshData();
       } else {
@@ -151,7 +260,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateTask = async (id: string, taskData: Partial<Task>) => {
     try {
-      const response = await tasksAPI.update(id, taskData);
+      // Map frontend task data to backend task data
+      const backendTaskData: {
+        title?: string;
+        description?: string;
+        project_id?: string;
+        status?: 'todo' | 'in_progress' | 'review' | 'completed';
+        priority?: 'low' | 'medium' | 'high' | 'urgent';
+        estimated_hours?: number;
+        actual_hours?: number;
+        due_date?: string;
+      } = {};
+      
+      if (taskData.name) backendTaskData.title = taskData.name;
+      if (taskData.description) backendTaskData.description = taskData.description;
+      if (taskData.projectId) backendTaskData.project_id = taskData.projectId;
+      if (taskData.status) {
+        backendTaskData.status = taskData.status === 'in-progress' ? 'in_progress' : 
+                                taskData.status === 'done' ? 'completed' : 'todo';
+      }
+      if (taskData.priority) backendTaskData.priority = taskData.priority;
+      if (taskData.deadline) backendTaskData.due_date = taskData.deadline;
+      
+      const response = await tasksAPI.update(id, backendTaskData);
       if (response.success) {
         await refreshData();
       } else {

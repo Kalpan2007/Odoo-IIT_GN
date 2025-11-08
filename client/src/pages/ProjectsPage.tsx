@@ -62,13 +62,17 @@ export const ProjectsPage: React.FC = () => {
         client: '', // This would need to be added to the form
         startDate: new Date().toISOString().split('T')[0],
         endDate: formData.deadline,
-        status: 'planning' as const,
+        status: 'active' as const,
         priority: formData.priority,
         tags: formData.tags,
         images: formData.images,
         managerImage: formData.projectManager,
-        deadline: formData.deadline,
-        tasksCount: 0
+        deadline: formData.deadline || null,
+        tasksCount: 0,
+        progress: 0,
+        revenue: 0,
+        expenses: 0,
+        profit: 0
       };
 
       if (editingProject) {
@@ -214,7 +218,7 @@ export const ProjectsPage: React.FC = () => {
                 { value: 'high', label: 'High' }
               ]}
               value={formData.priority}
-              onChange={(priority) => setFormData(prev => ({ ...prev, priority }))}
+              onChange={(priority) => setFormData(prev => ({ ...prev, priority: priority as 'low' | 'medium' | 'high' }))}
               horizontal
             />
 

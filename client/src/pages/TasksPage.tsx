@@ -6,15 +6,14 @@ import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { Task } from '../types';
 
 export const TasksPage: React.FC = () => {
   const { tasks, projects, addTask, updateTask, deleteTask, isLoading } = useApp();
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<any>(null);
-  const [isCoverModalOpen, setIsCoverModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -23,8 +22,7 @@ export const TasksPage: React.FC = () => {
     description: '',
     deadline: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
-    status: 'todo' as 'todo' | 'in-progress' | 'done',
-    coverImage: ''
+    status: 'todo' as 'todo' | 'in-progress' | 'done'
   });
 
   const taskColumns = {
@@ -63,13 +61,20 @@ export const TasksPage: React.FC = () => {
       description: '',
       deadline: '',
       priority: 'medium',
-      status: 'todo',
-      coverImage: ''
+      status: 'todo'
     });
   };
 
-  const openEditModal = (task: any) => {
-    setFormData(task);
+  const openEditModal = (task: Task) => {
+    setFormData({
+      name: task.name,
+      assignee: task.assignee,
+      projectId: task.projectId,
+      description: task.description,
+      deadline: task.deadline,
+      priority: task.priority,
+      status: task.status
+    });
     setEditingTask(task);
     setIsModalOpen(true);
   };
@@ -89,21 +94,13 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (selectedTask && e.target.files && e.target.files[0]) {
-      const file = URL.createObjectURL(e.target.files[0]);
-      updateTask(selectedTask.id, { coverImage: file });
-      setIsCoverModalOpen(false);
-    }
-  };
-
-  const onDragEnd = async (result: any) => {
+  const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
     if (destination.droppableId === source.droppableId) return;
     
     try {
-      await updateTask(draggableId, { status: destination.droppableId as any });
+      await updateTask(draggableId, { status: destination.droppableId as 'todo' | 'in-progress' | 'done' });
     } catch (error) {
       console.error('Failed to update task status:', error);
     }
@@ -167,20 +164,6 @@ export const TasksPage: React.FC = () => {
                             >
                               <div className="flex justify-between items-start">
                                 <div>
-                                  <div className="flex space-x-2 mb-1">
-                                    {task.tags?.map((tag: string) => (
-                                      <span
-                                        key={tag}
-                                        className={`text-xs px-2 py-0.5 rounded-full ${
-                                          tag === 'Bug'
-                                            ? 'bg-red-100 text-red-700'
-                                            : 'bg-green-100 text-green-700'
-                                        }`}
-                                      >
-                                        {tag}
-                                      </span>
-                                    ))}
-                                  </div>
                                   <p className="text-sm text-gray-700 font-semibold">
                                     Project: {projects.find((p) => p.id === task.projectId)?.name || 'N/A'}
                                   </p>
@@ -204,32 +187,15 @@ export const TasksPage: React.FC = () => {
                                       >
                                         Delete
                                       </button>
-                                      <button
-                                        className="block w-full text-left px-3 py-1 text-sm hover:bg-gray-100"
-                                        onClick={() => {
-                                          setSelectedTask(task);
-                                          setIsCoverModalOpen(true);
-                                        }}
-                                      >
-                                        Change Cover
-                                      </button>
                                     </div>
                                   </div>
                                 </div>
                               </div>
 
-                              {task.coverImage && (
-                                <img
-                                  src={task.coverImage}
-                                  alt="Cover"
-                                  className="w-full h-32 object-cover rounded-lg my-2"
-                                />
-                              )}
-
                               <div className="flex items-center justify-between text-sm text-gray-500 mt-1">
                                 <div className="flex items-center space-x-1">
                                   <img
-                                    src={task.assigneeImage || '/default-avatar.png'}
+                                    src="/default-avatar.png"
                                     alt="assignee"
                                     className="w-6 h-6 rounded-full"
                                   />
@@ -311,15 +277,6 @@ export const TasksPage: React.FC = () => {
             <Button type="submit">{editingTask ? 'Update Task' : 'Create Task'}</Button>
           </div>
         </form>
-      </Modal>
-
-      {/* Cover Image Modal */}
-      <Modal
-        isOpen={isCoverModalOpen}
-        onClose={() => setIsCoverModalOpen(false)}
-        title="Change Cover Image"
-      >
-        <input type="file" accept="image/*" onChange={handleCoverChange} />
       </Modal>
     </Layout>
   );

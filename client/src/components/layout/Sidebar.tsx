@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
   FiHome, 
@@ -16,7 +16,6 @@ import {
 
 export const Sidebar: React.FC = () => {
   const { user } = useAuth();
-  const location = useLocation();
 
   // Base navigation items
   const baseNavigation = [

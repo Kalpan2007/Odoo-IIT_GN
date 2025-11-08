@@ -1,4 +1,28 @@
-import { Project, Task, DashboardStats } from '../types';
+// Define backend data structures
+interface BackendProject {
+  name: string;
+  client: string;
+  start_date: string;
+  end_date?: string;
+  budget: number;
+  status: 'planning' | 'in_progress' | 'completed' | 'on_hold' | 'cancelled';
+  description?: string;
+  revenue?: number;
+  cost?: number;
+  profit?: number;
+}
+
+interface BackendTask {
+  title: string;
+  description?: string;
+  project_id?: string;
+  assigned_to?: string;
+  status: 'todo' | 'in_progress' | 'review' | 'completed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  estimated_hours?: number;
+  actual_hours?: number;
+  due_date?: string;
+}
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -76,7 +100,7 @@ export const projectsAPI = {
     return response.json();
   },
   
-  create: async (projectData: Omit<Project, 'id'>) => {
+  create: async (projectData: BackendProject) => {
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -86,7 +110,7 @@ export const projectsAPI = {
     return response.json();
   },
   
-  update: async (id: string, projectData: Partial<Project>) => {
+  update: async (id: string, projectData: Partial<BackendProject>) => {
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
@@ -129,7 +153,7 @@ export const tasksAPI = {
     return response.json();
   },
   
-  create: async (taskData: Omit<Task, 'id'>) => {
+  create: async (taskData: BackendTask) => {
     const response = await fetch(`${API_BASE_URL}/tasks`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -139,7 +163,7 @@ export const tasksAPI = {
     return response.json();
   },
   
-  update: async (id: string, taskData: Partial<Task>) => {
+  update: async (id: string, taskData: Partial<BackendTask>) => {
     const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
