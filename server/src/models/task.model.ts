@@ -2,7 +2,7 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
-  project_id: string;
+  project_id?: string;
   assigned_to?: string;
   status: 'todo' | 'in_progress' | 'review' | 'completed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -17,7 +17,7 @@ export interface Task {
 export interface CreateTaskRequest {
   title: string;
   description?: string;
-  project_id: string;
+  project_id?: string;
   assigned_to?: string;
   status?: 'todo' | 'in_progress' | 'review' | 'completed';
   priority?: 'low' | 'medium' | 'high' | 'urgent';

@@ -27,41 +27,56 @@ export const verifyToken = async (req: AuthRequest, res: Response, next: NextFun
     const token = authHeader.substring(7);
     
     if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not configured');
-    }
-
-    // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
-    
-    // Verify user still exists in Supabase
-    const { data: user, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return res.status(401).json({
+      return res.status(500).json({
         success: false,
-        message: 'Invalid or expired token'
+        message: 'Server configuration error: JWT_SECRET is not configured'
       });
     }
 
-    // Get user role from profiles table
-    const { data: profile } = await supabase
+    // Verify JWT token
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user exists in Supabase and get profile
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
-      .eq('id', user.user.id)
+      .select('id, email, role')
+      .eq('id', decoded.user_id)
       .single();
 
+    if (profileError || !profile) {
+      return res.status(401).json({
+        success: false,
+        message: 'User profile not found'
+      });
+    }
+
     req.user = {
-      id: user.user.id,
-      email: user.user.email || '',
-      role: profile?.role || 'team_member'
+      id: profile.id,
+      email: profile.email || '',
+      role: profile.role || 'team_member'
     };
 
     next();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Auth middleware error:', error);
-    return res.status(401).json({
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
+    
+    return res.status(500).json({
       success: false,
-      message: 'Invalid token'
+      message: 'Authentication error'
     });
   }
 };

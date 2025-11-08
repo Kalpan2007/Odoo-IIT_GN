@@ -12,7 +12,14 @@ if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
 }
 
 // Client for general operations with RLS
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+    flowType: 'pkce' // Use PKCE flow for better security
+  }
+});
 
 // Admin client for operations that bypass RLS
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -21,5 +28,21 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
     persistSession: false
   }
 });
+
+// Test the connection
+async function testConnection() {
+  try {
+    const { data, error } = await supabaseAdmin.rpc('version');
+    if (error) {
+      console.warn('Warning: Could not connect to Supabase:', error.message);
+    } else {
+      console.log('Successfully connected to Supabase');
+    }
+  } catch (err: any) {
+    console.warn('Warning: Could not test Supabase connection:', err.message);
+  }
+}
+
+testConnection();
 
 export default supabase;

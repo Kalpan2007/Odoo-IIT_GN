@@ -21,6 +21,16 @@ import dashboardRoutes from './routes/dashboard.routes';
 // Load environment variables
 dotenv.config();
 
+// Validate required environment variables
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your_super_secret_jwt_key_here') {
+  console.warn('WARNING: JWT_SECRET is not properly configured. Please set a strong secret in .env file for production.');
+}
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('ERROR: Supabase environment variables are not configured in .env file');
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 

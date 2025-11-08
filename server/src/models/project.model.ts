@@ -7,12 +7,12 @@ export interface Project {
   budget: number;
   status: 'planning' | 'in_progress' | 'completed' | 'on_hold' | 'cancelled';
   description?: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
   revenue?: number;
   cost?: number;
   profit?: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 export interface CreateProjectRequest {
@@ -28,4 +28,5 @@ export interface CreateProjectRequest {
 export interface UpdateProjectRequest extends Partial<CreateProjectRequest> {
   revenue?: number;
   cost?: number;
+  profit?: number;
 }

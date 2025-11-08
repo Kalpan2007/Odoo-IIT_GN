@@ -3,6 +3,39 @@ import { supabase } from '../config/supabaseClient';
 import { asyncHandler } from '../utils/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 
+interface Invoice {
+  total_amount: number;
+  issue_date: string;
+}
+
+interface Expense {
+  category: string;
+  amount: number;
+}
+
+interface Purchase {
+  amount: number;
+}
+
+interface Timesheet {
+  hours: number;
+  date: string;
+}
+
+interface Task {
+  project_id: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  budget: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  status: string;
+}
+
 /**
  * Get dashboard overview
  */
@@ -25,7 +58,7 @@ export const getOverview = asyncHandler(async (req: AuthRequest, res: Response) 
       .select('total_amount')
       .eq('status', 'paid');
 
-    const totalRevenue = invoiceData?.reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0) || 0;
+    const totalRevenue = invoiceData?.reduce((sum: number, invoice: any) => sum + (invoice.total_amount || 0), 0) || 0;
 
     // Get total costs from expenses and purchases
     const { data: expenseData } = await supabase
@@ -38,8 +71,8 @@ export const getOverview = asyncHandler(async (req: AuthRequest, res: Response) 
       .select('amount')
       .in('status', ['received', 'paid']);
 
-    const totalExpenses = expenseData?.reduce((sum, expense) => sum + (expense.amount || 0), 0) || 0;
-    const totalPurchases = purchaseData?.reduce((sum, purchase) => sum + (purchase.amount || 0), 0) || 0;
+    const totalExpenses = expenseData?.reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) || 0;
+    const totalPurchases = purchaseData?.reduce((sum: number, purchase: any) => sum + (purchase.amount || 0), 0) || 0;
     const totalCosts = totalExpenses + totalPurchases;
 
     // Calculate profit
@@ -90,7 +123,7 @@ export const getFinancials = asyncHandler(async (req: AuthRequest, res: Response
 
     // Group by month
     const monthlyRevenue: { [key: string]: number } = {};
-    monthlyInvoices?.forEach(invoice => {
+    monthlyInvoices?.forEach((invoice: any) => {
       const month = new Date(invoice.issue_date).toISOString().substring(0, 7);
       monthlyRevenue[month] = (monthlyRevenue[month] || 0) + invoice.total_amount;
     });
@@ -102,7 +135,7 @@ export const getFinancials = asyncHandler(async (req: AuthRequest, res: Response
       .eq('approved', true);
 
     const expenseByCategory: { [key: string]: number } = {};
-    expenses?.forEach(expense => {
+    expenses?.forEach((expense: any) => {
       expenseByCategory[expense.category] = (expenseByCategory[expense.category] || 0) + expense.amount;
     });
 
@@ -141,7 +174,7 @@ export const getUserStats = asyncHandler(async (req: AuthRequest, res: Response)
       .select('hours')
       .eq('user_id', userId);
 
-    const totalHours = timesheets?.reduce((sum, entry) => sum + (entry.hours || 0), 0) || 0;
+    const totalHours = timesheets?.reduce((sum: number, entry: any) => sum + (entry.hours || 0), 0) || 0;
 
     // Get tasks completed
     const { count: tasksCompleted } = await supabase
@@ -163,7 +196,7 @@ export const getUserStats = asyncHandler(async (req: AuthRequest, res: Response)
       .select('project_id')
       .eq('assigned_to', userId);
 
-    const uniqueProjects = [...new Set(userProjects?.map(task => task.project_id))];
+    const uniqueProjects = [...new Set(userProjects?.map((task: any) => task.project_id))];
 
     // Get recent activity (last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();

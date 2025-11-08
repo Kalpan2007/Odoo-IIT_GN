@@ -1,7 +1,7 @@
 export interface Timesheet {
   id: string;
   user_id: string;
-  project_id: string;
+  project_id?: string;
   task_id?: string;
   description: string;
   hours: number;
@@ -14,7 +14,8 @@ export interface Timesheet {
 }
 
 export interface CreateTimesheetRequest {
-  project_id: string;
+  user_id?: string;
+  project_id?: string;
   task_id?: string;
   description: string;
   hours: number;

@@ -24,4 +24,6 @@ export interface CreateSalesOrderRequest {
   description?: string;
 }
 
-export interface UpdateSalesOrderRequest extends Partial<CreateSalesOrderRequest> {}
+export interface UpdateSalesOrderRequest extends Partial<CreateSalesOrderRequest> {
+  status?: 'draft' | 'sent' | 'accepted' | 'completed' | 'cancelled';
+}

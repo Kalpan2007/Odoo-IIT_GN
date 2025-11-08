@@ -4,7 +4,7 @@ export interface Invoice {
   client: string;
   project_id?: string;
   amount: number;
-  tax_amount?: number;
+  tax_amount: number;
   total_amount: number;
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   issue_date: string;
@@ -21,10 +21,12 @@ export interface CreateInvoiceRequest {
   project_id?: string;
   amount: number;
   tax_amount?: number;
-  status?: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   issue_date: string;
   due_date: string;
   description?: string;
 }
 
-export interface UpdateInvoiceRequest extends Partial<CreateInvoiceRequest> {}
+export interface UpdateInvoiceRequest extends Partial<CreateInvoiceRequest> {
+  status?: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  total_amount?: number;
+}

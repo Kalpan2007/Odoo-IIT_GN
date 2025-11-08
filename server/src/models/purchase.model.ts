@@ -24,4 +24,6 @@ export interface CreatePurchaseRequest {
   description?: string;
 }
 
-export interface UpdatePurchaseRequest extends Partial<CreatePurchaseRequest> {}
+export interface UpdatePurchaseRequest extends Partial<CreatePurchaseRequest> {
+  status?: 'draft' | 'ordered' | 'received' | 'paid' | 'cancelled';
+}
